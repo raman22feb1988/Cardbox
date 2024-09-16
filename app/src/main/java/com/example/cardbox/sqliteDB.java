@@ -210,6 +210,8 @@ public class sqliteDB extends SQLiteOpenHelper {
 
     public void importLabels(Context situation)
     {
+        SQLiteDatabase db = this.getWritableDatabase();
+
         File exportDir = new File(Environment.getExternalStorageDirectory(), "");
         String path = "Android/data/com.example.cardbox/files/labels.csv";
 
@@ -235,7 +237,20 @@ public class sqliteDB extends SQLiteOpenHelper {
                                 String columns[] = csvRead.readNext();
                                 String nextLine[] = csvRead.readNext();
                                 do {
-                                    updateAnswers(nextLine[0], nextLine[1]);
+                                    ContentValues contentValues = new ContentValues();
+                                    int wordIndex = 0;
+                                    for(int column = 0; column < columns.length; column++) {
+                                        if(columns[column].equals("word"))
+                                        {
+                                            wordIndex = column;
+                                        }
+                                        else
+                                        {
+                                            contentValues.put(columns[column], nextLine[column]);
+                                        }
+                                    }
+                                    db.update("words", contentValues, "word = ?",
+                                            new String[] {columns[wordIndex]});
                                     nextLine = csvRead.readNext();
                                 } while (nextLine != null);
                                 csvRead.close();
@@ -330,16 +345,6 @@ public class sqliteDB extends SQLiteOpenHelper {
             } while (cursor.moveToNext());
         }
         return unsolvedAnswers;
-    }
-
-    public int updateAnswers(String line, String category) {
-        SQLiteDatabase db = getWritableDatabase();
-
-        ContentValues values = new ContentValues();
-        values.put("label", category);
-
-        return db.update("words", values, "word = ?",
-                new String[] {line});
     }
 
     public String getLabelColours()
